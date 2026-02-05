@@ -1,4 +1,4 @@
-import { functions } from './firebase-config.js';
+// import { functions } from './firebase-config.js';
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
 
 // DOM Elements
