@@ -1,5 +1,4 @@
-// import { functions } from './firebase-config.js';
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
+import { auth } from './firebase-config.js';
 
 // DOM Elements
 const voiceSelect = document.getElementById('voice-select');
@@ -15,29 +14,35 @@ export function initVoiceManager() {
   loadVoices();
 }
 
-// Load Voices from ElevenLabs
+// Load Voices from Vercel API
 async function loadVoices() {
   try {
     voiceLoader.style.display = 'block';
     voiceSelect.classList.add('hidden');
     
-    const getVoices = httpsCallable(functions, 'getVoices');
-    const result = await getVoices();
+    const response = await fetch('/api/get-voices', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
     
-    if (result.data.success) {
-      voices = result.data.voices;
+    if (data.success) {
+      voices = data.voices;
       renderVoices();
       voiceLoader.style.display = 'none';
       voiceSelect.classList.remove('hidden');
     } else {
-      throw new Error('Failed to fetch voices');
+      throw new Error(data.error || 'Failed to fetch voices');
     }
     
   } catch (error) {
     console.error('Error loading voices:', error);
     voiceLoader.innerHTML = `
       <p style="color: var(--danger);">
-        Failed to load voices. Make sure you've added API keys.
+        ${error.message || 'Failed to load voices. Make sure you\'ve added API keys.'}
       </p>
     `;
   }
@@ -45,7 +50,6 @@ async function loadVoices() {
 
 // Render Voices in Select Dropdown
 function renderVoices() {
-  // Group voices by category
   const premadeVoices = voices.filter(v => v.category === 'premade' || !v.category);
   const clonedVoices = voices.filter(v => v.category === 'cloned');
   const generatedVoices = voices.filter(v => v.category === 'generated');
@@ -79,7 +83,6 @@ function renderVoices() {
   
   voiceSelect.innerHTML = optionsHTML;
   
-  // Auto-select first voice if available
   if (premadeVoices.length > 0) {
     voiceSelect.value = premadeVoices[0].voice_id;
     selectedVoice = premadeVoices[0];
@@ -103,7 +106,7 @@ function handleVoiceChange(e) {
   }
 }
 
-// Update Voice Settings (if voice has default settings)
+// Update Voice Settings
 function updateVoiceSettings(voice) {
   if (voice.settings) {
     const stabilitySlider = document.getElementById('stability-slider');
@@ -146,7 +149,7 @@ export function getVoiceSettings() {
   };
 }
 
-// Reload Voices (for when new voices are cloned)
+// Reload Voices
 export function reloadVoices() {
   loadVoices();
 }
