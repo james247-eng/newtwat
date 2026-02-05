@@ -2,10 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
       "src": "api/**/*.js",
       "use": "@vercel/node"
     }
@@ -16,8 +12,40 @@
       "dest": "/api/$1"
     },
     {
+      "src": "/js/(.*)",
+      "dest": "/js/$1"
+    },
+    {
+      "src": "/css/(.*)",
+      "dest": "/css/$1"
+    },
+    {
+      "src": "/(.*\\.(html|css|js|json|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    },
+    {
+      "source": "/css/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css"
+        }
+      ]
     }
   ]
 }
