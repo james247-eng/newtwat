@@ -23,9 +23,15 @@ export function playAudio(audioUrl, audioId = null) {
   currentAudioUrl = audioUrl;
   currentAudioId = audioId;
   
+  // Set crossOrigin to handle Cloudinary CORS
+  audioElement.crossOrigin = "anonymous";
   audioElement.src = audioUrl;
   audioElement.load();
-  audioElement.play();
+  
+  // Auto-play
+  audioElement.play().catch(error => {
+    console.error('Playback error:', error);
+  });
   
   audioPlayerSection.style.display = 'block';
   
@@ -34,16 +40,29 @@ export function playAudio(audioUrl, audioId = null) {
 }
 
 // Download Audio
-function handleDownload() {
+async function handleDownload() {
   if (!currentAudioUrl) return;
   
-  const link = document.createElement('a');
-  link.href = currentAudioUrl;
-  link.download = `tts_${currentAudioId || Date.now()}.mp3`;
-  link.target = '_blank';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    // Fetch the audio file
+    const response = await fetch(currentAudioUrl);
+    const blob = await response.blob();
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `tts_${currentAudioId || Date.now()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download error:', error);
+    alert('Failed to download audio. Please try again.');
+  }
 }
 
 // Load Audio History from Firestore
@@ -119,33 +138,52 @@ function renderAudioHistory() {
   
   // Attach event handlers
   document.querySelectorAll('.play-history-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       playAudio(btn.dataset.audioUrl, btn.dataset.audioId);
     });
   });
   
   document.querySelectorAll('.download-history-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      downloadHistoryAudio(btn.dataset.audioUrl, btn.dataset.audioId);
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await downloadHistoryAudio(btn.dataset.audioUrl, btn.dataset.audioId);
     });
   });
   
   document.querySelectorAll('.delete-history-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       deleteHistoryItem(btn.dataset.historyId);
     });
   });
 }
 
 // Download History Audio
-function downloadHistoryAudio(audioUrl, audioId) {
-  const link = document.createElement('a');
-  link.href = audioUrl;
-  link.download = `tts_${audioId}.mp3`;
-  link.target = '_blank';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+async function downloadHistoryAudio(audioUrl, audioId) {
+  try {
+    // Fetch the audio file
+    const response = await fetch(audioUrl);
+    const blob = await response.blob();
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `tts_${audioId}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download error:', error);
+    alert('Failed to download audio. Please try again.');
+  }
 }
 
 // Delete History Item
